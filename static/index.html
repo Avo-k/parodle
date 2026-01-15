@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Parodle - Jacques Brel</title>
+    <link rel="stylesheet" href="/static/css/style.css">
+</head>
+<body>
+    <div class="container">
+        <header>
+            <h1>Parodle</h1>
+            <p class="subtitle">Testez votre connaissance des paroles de Jacques Brel</p>
+        </header>
+
+        <!-- Ecran de selection du mode -->
+        <section id="mode-selection" class="screen active">
+            <h2>Choisissez un mode</h2>
+            <div class="mode-buttons">
+                <button class="mode-btn" data-mode="word_guessing">
+                    <span class="mode-icon">?</span>
+                    <span class="mode-title">Deviner le mot</span>
+                    <span class="mode-desc">Trouvez le mot manquant dans une phrase</span>
+                </button>
+                <button class="mode-btn" data-mode="song_name">
+                    <span class="mode-icon">&#9835;</span>
+                    <span class="mode-title">Deviner la chanson</span>
+                    <span class="mode-desc">Trouvez le titre a partir des paroles</span>
+                </button>
+            </div>
+        </section>
+
+        <!-- Ecran de jeu -->
+        <section id="game-screen" class="screen">
+            <button id="back-to-menu-btn" class="menu-btn-top">Menu</button>
+
+            <div class="game-header">
+                <div class="mode-indicator" id="mode-indicator"></div>
+                <div class="timer" id="timer">00:00</div>
+            </div>
+
+            <div class="guesses-indicator" id="guesses-indicator">
+                <span class="guess-dot"></span>
+                <span class="guess-dot"></span>
+                <span class="guess-dot"></span>
+                <span class="guess-dot"></span>
+                <span class="guess-dot"></span>
+            </div>
+
+            <div class="phrase-container">
+                <p class="phrase" id="phrase"></p>
+                <p class="word-type-hint" id="word-type-hint"></p>
+            </div>
+
+            <form id="guess-form" class="guess-form">
+                <input
+                    type="text"
+                    id="guess-input"
+                    placeholder="Votre reponse..."
+                    autocomplete="off"
+                    autofocus
+                >
+                <button type="submit" class="submit-btn">Valider</button>
+            </form>
+
+            <div class="hints-section" id="hints-section">
+                <span class="hints-label">Indice (-2)</span>
+                <div class="hints-buttons">
+                    <button id="hint-letter-count-btn" class="hint-btn">Lettres</button>
+                    <button id="hint-song-title-btn" class="hint-btn">Titre</button>
+                    <button id="hint-first-letter-btn" class="hint-btn">1ere lettre</button>
+                </div>
+            </div>
+
+            <button id="pass-btn" class="pass-btn">Passer</button>
+
+            <div class="previous-guesses" id="previous-guesses"></div>
+        </section>
+
+        <!-- Ecran de resultat -->
+        <section id="result-screen" class="screen">
+            <div class="result-content">
+                <h2 id="result-title"></h2>
+                <div class="score-display" id="score-display"></div>
+                <div class="result-details">
+                    <p><strong>Reponse :</strong> <span id="correct-answer"></span></p>
+                    <p><strong>Chanson :</strong> <span id="song-title"></span></p>
+                    <p><strong>Temps :</strong> <span id="time-taken"></span></p>
+                </div>
+                <button class="play-again-btn" id="play-again">Rejouer</button>
+            </div>
+        </section>
+
+        <footer>
+            <p>un jeu par Claude et Avo-k</p>
+        </footer>
+    </div>
+
+    <script src="/static/js/game.js"></script>
+</body>
+</html>
