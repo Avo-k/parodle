@@ -7,6 +7,31 @@ import unicodedata
 import re
 
 
+# Liste des mots vides (stopwords) francais courants
+FRENCH_STOPWORDS = {
+    # Articles
+    'le', 'la', 'les', 'un', 'une', 'des', 'du', 'au', 'aux',
+    # Pronoms
+    'je', 'tu', 'il', 'elle', 'on', 'nous', 'vous', 'ils', 'elles',
+    'me', 'te', 'se', 'moi', 'toi', 'lui', 'leur', 'leurs',
+    'ce', 'ca', 'ceci', 'cela',
+    # Prepositions
+    'de', 'a', 'en', 'par', 'pour', 'sans', 'avec', 'dans', 'sur', 'sous',
+    'vers', 'chez', 'contre', 'entre', 'pendant', 'depuis',
+    # Conjonctions
+    'et', 'ou', 'mais', 'donc', 'or', 'ni', 'car', 'que', 'qui', 'quoi',
+    'si', 'comme', 'quand', 'lorsque',
+    # Adverbes courants
+    'ne', 'pas', 'plus', 'non', 'oui', 'si', 'bien', 'mal', 'tres',
+    'peu', 'trop', 'tout', 'tous', 'toute', 'toutes', 'rien',
+    # Verbes auxiliaires et etre/avoir courants
+    'est', 'sont', 'etait', 'etaient', 'ete', 'etre',
+    'ai', 'as', 'a', 'ont', 'avait', 'avaient', 'avoir', 'eu',
+    # Autres mots tres courants
+    'y', 'en', 'dont', 'où', 'ou',
+}
+
+
 def normalize_french(text: str) -> str:
     """
     Normalise le texte francais pour comparaison.
@@ -117,3 +142,17 @@ def split_into_chunks(text: str, chunk_size: int = 6) -> list[str]:
             chunks.append(chunk)
 
     return chunks
+
+
+def is_stopword(word: str) -> bool:
+    """
+    Verifie si un mot est un stopword (mot vide).
+
+    Args:
+        word: Le mot a verifier
+
+    Returns:
+        True si le mot est un stopword
+    """
+    normalized = normalize_french(word)
+    return normalized in FRENCH_STOPWORDS

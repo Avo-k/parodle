@@ -16,7 +16,8 @@ from src.utils.text_processing import (
     words_match,
     extract_words,
     create_phrase_with_blank,
-    split_into_chunks
+    split_into_chunks,
+    is_stopword
 )
 
 
@@ -223,6 +224,10 @@ def _generate_word_puzzle(min_visible_words: int = 5, max_attempts: int = 10) ->
             if len(context_words) < min_visible_words:
                 continue
 
+            # Rejette si c'est un stopword
+            if is_stopword(answer):
+                continue
+
             phrase = ' '.join(context_words) + " ___"
 
         elif word_type == WordGuessType.PREVIOUS:
@@ -233,6 +238,10 @@ def _generate_word_puzzle(min_visible_words: int = 5, max_attempts: int = 10) ->
             context_words = words[1:]
 
             if len(context_words) < min_visible_words:
+                continue
+
+            # Rejette si c'est un stopword
+            if is_stopword(answer):
                 continue
 
             phrase = "___ " + ' '.join(context_words)
@@ -246,6 +255,10 @@ def _generate_word_puzzle(min_visible_words: int = 5, max_attempts: int = 10) ->
             # Choisit un mot au milieu (pas premier ni dernier)
             blank_index = random.randint(1, len(words) - 2)
             answer = words[blank_index]
+
+            # Rejette si c'est un stopword
+            if is_stopword(answer):
+                continue
 
             # Construit la phrase avec ___
             phrase_words = words.copy()
