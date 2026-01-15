@@ -16,6 +16,8 @@ from src.schemas.game import (
     StatsResponse,
     GameMode,
     WordGuessType,
+    ArtistSchema,
+    ArtistsResponse,
 )
 from src.services.game_service import (
     start_word_guessing_game,
@@ -29,9 +31,27 @@ from src.services.game_service import (
     get_hint_first_letter,
     get_active_sessions_count,
 )
-from src.services.lyrics_service import get_lyrics_service
+from src.services.lyrics_service import get_lyrics_service, get_available_artists
 
 router = APIRouter(prefix="/api/game", tags=["game"])
+
+
+@router.get("/artists", response_model=ArtistsResponse)
+async def get_artists() -> ArtistsResponse:
+    """
+    Retourne la liste des artistes disponibles.
+    """
+    artists = get_available_artists()
+    return ArtistsResponse(
+        artists=[
+            ArtistSchema(
+                id=artist.id,
+                name=artist.name,
+                song_count=artist.song_count
+            )
+            for artist in artists
+        ]
+    )
 
 
 @router.post("/start", response_model=StartGameResponse)
@@ -40,12 +60,16 @@ async def start_game(request: StartGameRequest) -> StartGameResponse:
     Demarre une nouvelle partie.
 
     - **mode**: "word_guessing" ou "song_name"
+    - **artist_id**: Identifiant de l'artiste (par defaut "jacques-brel")
     - **min_visible_words**: Nombre minimum de mots visibles (par defaut 5)
     """
     if request.mode == GameMode.WORD_GUESSING:
-        session = start_word_guessing_game(min_visible_words=request.min_visible_words)
+        session = start_word_guessing_game(
+            min_visible_words=request.min_visible_words,
+            artist_id=request.artist_id
+        )
     else:
-        session = start_song_name_game()
+        session = start_song_name_game(artist_id=request.artist_id)
 
     if not session:
         raise HTTPException(

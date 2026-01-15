@@ -13,6 +13,14 @@ from src.utils.text_processing import extract_words
 
 
 @dataclass
+class Artist:
+    """Represente un artiste."""
+    id: str
+    name: str
+    song_count: int
+
+
+@dataclass
 class Song:
     """Represente une chanson."""
     id: str
@@ -33,8 +41,19 @@ class LyricsData:
 class LyricsService:
     """Service de gestion des paroles."""
 
-    def __init__(self, data_path: str = "data/lyrics.json"):
-        self.data_path = Path(data_path)
+    def __init__(self, artist_id: str = "jacques-brel"):
+        """
+        Initialise le service de paroles pour un artiste specifique.
+        
+        Args:
+            artist_id: Identifiant de l'artiste (ex: "jacques-brel", "benabar")
+        """
+        self.artist_id = artist_id
+        # Essaie d'abord le nouveau format (data/artists/{artist_id}.json)
+        self.data_path = Path(f"data/artists/{artist_id}.json")
+        # Fallback sur l'ancien format pour compatibilite
+        if not self.data_path.exists():
+            self.data_path = Path("data/lyrics.json")
         self.data: Optional[LyricsData] = None
         self._load_data()
 
@@ -175,13 +194,50 @@ class LyricsService:
         return len(self.data.songs)
 
 
-# Instance globale du service
-_lyrics_service: Optional[LyricsService] = None
+def get_available_artists() -> list[Artist]:
+    """
+    Retourne la liste des artistes disponibles.
+    
+    Returns:
+        Liste des artistes avec leur metadata
+    """
+    artists_file = Path("data/artists.json")
+    if not artists_file.exists():
+        # Fallback: si pas de fichier artists.json, retourne juste Brel
+        return [Artist(id="jacques-brel", name="Jacques Brel", song_count=120)]
+    
+    try:
+        with open(artists_file, 'r', encoding='utf-8') as f:
+            data = json.load(f)
+        
+        artists = []
+        for artist_data in data.get('artists', []):
+            artists.append(Artist(
+                id=artist_data['id'],
+                name=artist_data['name'],
+                song_count=artist_data.get('song_count', 0)
+            ))
+        return artists
+    except Exception as e:
+        print(f"Erreur lors du chargement des artistes: {e}")
+        return [Artist(id="jacques-brel", name="Jacques Brel", song_count=120)]
 
 
-def get_lyrics_service() -> LyricsService:
-    """Retourne l'instance globale du service de paroles."""
-    global _lyrics_service
-    if _lyrics_service is None:
-        _lyrics_service = LyricsService()
-    return _lyrics_service
+# Instances du service par artiste (cache)
+_lyrics_services: dict[str, LyricsService] = {}
+
+
+def get_lyrics_service(artist_id: str = "jacques-brel") -> LyricsService:
+    """
+    Retourne l'instance du service de paroles pour un artiste specifique.
+    
+    Args:
+        artist_id: Identifiant de l'artiste
+    
+    Returns:
+        Service de paroles pour cet artiste
+    """
+    global _lyrics_services
+    if artist_id not in _lyrics_services:
+        _lyrics_services[artist_id] = LyricsService(artist_id=artist_id)
+    return _lyrics_services[artist_id]

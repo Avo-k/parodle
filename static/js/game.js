@@ -1,5 +1,5 @@
 /**
- * Parodle - Jeu de paroles Jacques Brel
+ * Parodle - Jeu de paroles
  */
 
 class ParodleGame {
@@ -13,6 +13,8 @@ class ParodleGame {
         this.currentRound = 1;
         this.totalRounds = 1;
         this.cumulativeScore = 0;
+        this.selectedArtist = null;
+        this.artists = [];
 
         this.init();
     }
@@ -26,6 +28,7 @@ class ParodleGame {
         };
 
         this.elements = {
+            artistSelect: document.getElementById('artist-select'),
             modeIndicator: document.getElementById('mode-indicator'),
             timer: document.getElementById('timer'),
             guessesIndicator: document.getElementById('guesses-indicator'),
@@ -49,9 +52,15 @@ class ParodleGame {
         };
 
         this.bindEvents();
+        this.loadArtists();
     }
 
     bindEvents() {
+        // Artist selection
+        this.elements.artistSelect.addEventListener('change', (e) => {
+            this.selectedArtist = e.target.value;
+        });
+
         // Mode selection buttons
         document.querySelectorAll('.mode-btn').forEach(btn => {
             btn.addEventListener('click', () => {
@@ -98,6 +107,37 @@ class ParodleGame {
         });
     }
 
+    async loadArtists() {
+        try {
+            const response = await fetch('/api/game/artists');
+            if (!response.ok) {
+                throw new Error('Erreur lors du chargement des artistes');
+            }
+
+            const data = await response.json();
+            this.artists = data.artists;
+
+            // Populate dropdown
+            this.elements.artistSelect.innerHTML = '';
+            this.artists.forEach(artist => {
+                const option = document.createElement('option');
+                option.value = artist.id;
+                option.textContent = `${artist.name} (${artist.song_count} chansons)`;
+                this.elements.artistSelect.appendChild(option);
+            });
+
+            // Select first artist by default
+            if (this.artists.length > 0) {
+                this.selectedArtist = this.artists[0].id;
+                this.elements.artistSelect.value = this.selectedArtist;
+            }
+
+        } catch (error) {
+            console.error('Erreur:', error);
+            this.elements.artistSelect.innerHTML = '<option value="">Erreur de chargement</option>';
+        }
+    }
+
     showScreen(screenName) {
         Object.values(this.screens).forEach(screen => {
             screen.classList.remove('active');
@@ -106,13 +146,21 @@ class ParodleGame {
     }
 
     async startGame(mode) {
+        if (!this.selectedArtist) {
+            alert('Veuillez selectionner un artiste');
+            return;
+        }
+
         try {
             const response = await fetch('/api/game/start', {
                 method: 'POST',
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ mode })
+                body: JSON.stringify({ 
+                    mode,
+                    artist_id: this.selectedArtist
+                })
             });
 
             if (!response.ok) {

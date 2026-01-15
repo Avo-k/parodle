@@ -3,19 +3,28 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Parodle - Jacques Brel</title>
+    <title>Parodle - Jeu de paroles</title>
     <link rel="stylesheet" href="/static/css/style.css">
 </head>
 <body>
     <div class="container">
         <header>
             <h1>Parodle</h1>
-            <p class="subtitle">Testez votre connaissance des paroles de Jacques Brel</p>
+            <p class="subtitle">Testez votre connaissance des paroles</p>
         </header>
 
         <!-- Ecran de selection du mode -->
         <section id="mode-selection" class="screen active">
-            <h2>Choisissez un mode</h2>
+            <h2>Choisissez un artiste et un mode</h2>
+            
+            <!-- Artist selection -->
+            <div class="artist-selection">
+                <label for="artist-select">Artiste :</label>
+                <select id="artist-select" class="artist-dropdown">
+                    <option value="">Chargement...</option>
+                </select>
+            </div>
+
             <div class="mode-buttons">
                 <button class="mode-btn" data-mode="word_guessing">
                     <span class="mode-icon">?</span>

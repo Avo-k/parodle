@@ -1,0 +1,15 @@
+{
+  "artists": [
+    {
+      "id": "jacques-brel",
+      "name": "Jacques Brel",
+      "song_count": 120
+    },
+    {
+      "id": "benabar",
+      "name": "Bénabar",
+      "song_count": 104
+    }
+  ]
+}
+

@@ -1,6 +1,6 @@
 # Parodle
 
-Jeu de devinette de paroles de Jacques Brel en francais.
+Jeu de devinette de paroles de chansons en francais.
 
 ## Installation
 
@@ -38,7 +38,7 @@ Puis ouvrez http://localhost:8000 dans votre navigateur.
 
 ### 1. Deviner le mot (5 manches)
 
-Trouvez le mot manquant dans une phrase extraite des paroles de Jacques Brel.
+Trouvez le mot manquant dans une phrase extraite des paroles de l'artiste choisi.
 - **5 manches** pour maximiser votre score
 - **3 variantes** choisies aleatoirement :
   - Mot suivant : "Ne me quitte ___"
@@ -67,7 +67,9 @@ Score par manche = 1000 × multiplicateur_tentatives × multiplicateur_temps
 
 ## Caracteristiques
 
-- **120 chansons** de Jacques Brel
+- **Multi-artistes** : Choisissez parmi plusieurs artistes
+  - Jacques Brel (120 chansons)
+  - Bénabar (104 chansons)
 - **Comparaison tolerante** : les accents sont affiches mais pas requis dans vos reponses
 - **Interface minimaliste** en francais
 - **Timer** pour chaque partie
@@ -80,10 +82,13 @@ Lors du demarrage d'une partie via `POST /api/game/start` :
 ```json
 {
   "mode": "word_guessing",
+  "artist_id": "jacques-brel",
   "min_visible_words": 5
 }
 ```
 
+- `mode` : Mode de jeu ("word_guessing" ou "song_name")
+- `artist_id` : Identifiant de l'artiste ("jacques-brel" ou "benabar")
 - `min_visible_words` : Nombre minimum de mots visibles (sans compter "___")
   - **3** : Plus difficile, moins de contexte
   - **5** : Par defaut, equilibre difficulte/contexte
@@ -93,18 +98,30 @@ Lors du demarrage d'une partie via `POST /api/game/start` :
 
 Pour re-scraper les paroles (si besoin) :
 
+**Jacques Brel** :
 ```bash
 uv run -m scripts.scrape_lyrics
 ```
 
-Cela recupere les paroles depuis paroles.net et les sauvegarde dans `data/lyrics.json`.
+**Bénabar** :
+```bash
+uv run -m scripts.scrape_benabar
+```
+
+Les paroles sont recuperees depuis paroles.net et sauvegardees dans `data/artists/{artiste}.json`.
 
 ## Structure du projet
 
 ```
 parodle/
-├── data/lyrics.json          # 120 chansons de Brel
-├── scripts/scrape_lyrics.py  # Script de scraping
+├── data/
+│   ├── artists/              # Paroles par artiste
+│   │   ├── jacques-brel.json # 120 chansons de Brel
+│   │   └── benabar.json      # 104 chansons de Bénabar
+│   └── artists.json          # Metadata des artistes
+├── scripts/
+│   ├── scrape_lyrics.py      # Script de scraping Brel
+│   └── scrape_benabar.py     # Script de scraping Bénabar
 ├── src/
 │   ├── main.py              # App FastAPI
 │   ├── routers/game.py      # API endpoints
@@ -121,6 +138,7 @@ parodle/
 
 - `GET /` - Page d'accueil
 - `GET /health` - Verification de sante
+- `GET /api/game/artists` - Liste des artistes disponibles
 - `POST /api/game/start` - Demarrer une partie
 - `POST /api/game/guess` - Soumettre une reponse
 - `GET /api/game/session/{id}` - Etat d'une session
@@ -131,4 +149,4 @@ parodle/
 - **Backend** : FastAPI, Python 3.12
 - **Frontend** : HTML5, CSS3, JavaScript vanilla
 - **Package manager** : UV
-- **Data** : JSON (120 chansons)
+- **Data** : JSON (224 chansons au total)

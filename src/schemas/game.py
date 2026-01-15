@@ -20,9 +20,22 @@ class WordGuessType(str, Enum):
     MISSING = "missing"
 
 
+class ArtistSchema(BaseModel):
+    """Schema pour un artiste."""
+    id: str
+    name: str
+    song_count: int
+
+
+class ArtistsResponse(BaseModel):
+    """Reponse pour la liste des artistes."""
+    artists: List[ArtistSchema]
+
+
 class StartGameRequest(BaseModel):
     """Requete pour demarrer une partie."""
     mode: GameMode
+    artist_id: str = "jacques-brel"  # Identifiant de l'artiste
     min_visible_words: int = 5  # Nombre minimum de mots visibles (sans compter ___)
 
 
