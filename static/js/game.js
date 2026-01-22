@@ -14,6 +14,7 @@ class ParodleGame {
         this.totalRounds = 1;
         this.cumulativeScore = 0;
         this.selectedArtist = null;
+        this.selectedDifficulty = 5;
         this.artists = [];
 
         this.init();
@@ -29,6 +30,7 @@ class ParodleGame {
 
         this.elements = {
             artistSelect: document.getElementById('artist-select'),
+            difficultySelect: document.getElementById('difficulty-select'),
             modeIndicator: document.getElementById('mode-indicator'),
             timer: document.getElementById('timer'),
             guessesIndicator: document.getElementById('guesses-indicator'),
@@ -59,6 +61,11 @@ class ParodleGame {
         // Artist selection
         this.elements.artistSelect.addEventListener('change', (e) => {
             this.selectedArtist = e.target.value;
+        });
+
+        // Difficulty selection
+        this.elements.difficultySelect.addEventListener('change', (e) => {
+            this.selectedDifficulty = parseInt(e.target.value, 10);
         });
 
         // Mode selection buttons
@@ -157,9 +164,10 @@ class ParodleGame {
                 headers: {
                     'Content-Type': 'application/json'
                 },
-                body: JSON.stringify({ 
+                body: JSON.stringify({
                     mode,
-                    artist_id: this.selectedArtist
+                    artist_id: this.selectedArtist,
+                    difficulty: this.selectedDifficulty
                 })
             });
 

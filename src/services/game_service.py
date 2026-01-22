@@ -54,6 +54,7 @@ class GameSession:
     answer: str
     phrase: str
     artist_id: str = "jacques-brel"  # Artiste selectionne
+    difficulty: int = 5  # Niveau de difficulte (1-5)
     word_type: Optional[WordGuessType] = None
     guesses_remaining: int = 5
     guesses_made: list[str] = field(default_factory=list)
@@ -178,7 +179,7 @@ def _validate_unique_answer(song: Song, context_words: list[str], answer_index: 
     return matches == 1
 
 
-def _generate_word_puzzle(min_visible_words: int = 5, max_attempts: int = 10, artist_id: str = "jacques-brel") -> Optional[tuple[Song, str, str, WordGuessType]]:
+def _generate_word_puzzle(min_visible_words: int = 5, max_attempts: int = 10, artist_id: str = "jacques-brel", difficulty: int = 5) -> Optional[tuple[Song, str, str, WordGuessType]]:
     """
     Genere un puzzle de mot aleatoire avec validation d'unicite.
 
@@ -191,6 +192,7 @@ def _generate_word_puzzle(min_visible_words: int = 5, max_attempts: int = 10, ar
         min_visible_words: Nombre minimum de mots visibles (sans compter "___")
         max_attempts: Nombre max de tentatives pour trouver un puzzle valide
         artist_id: Identifiant de l'artiste
+        difficulty: Niveau de difficulte (1-5)
 
     Returns:
         Tuple (chanson, phrase_avec_blanc, reponse, type) ou None
@@ -201,7 +203,8 @@ def _generate_word_puzzle(min_visible_words: int = 5, max_attempts: int = 10, ar
 
     for attempt in range(max_attempts):
         # Obtient une phrase aleatoire (deja alignee sur les lignes)
-        result = lyrics_service.get_random_phrase(
+        result = lyrics_service.get_random_phrase_for_difficulty(
+            difficulty=difficulty,
             min_words=min_total_words,
             max_words=12
         )
@@ -275,17 +278,18 @@ def _generate_word_puzzle(min_visible_words: int = 5, max_attempts: int = 10, ar
     return None
 
 
-def start_word_guessing_game(min_visible_words: int = 5, artist_id: str = "jacques-brel") -> Optional[GameSession]:
+def start_word_guessing_game(min_visible_words: int = 5, artist_id: str = "jacques-brel", difficulty: int = 5) -> Optional[GameSession]:
     """
     Demarre une partie de devinette de mot (5 manches).
 
     Args:
         min_visible_words: Nombre minimum de mots visibles (sans compter "___")
         artist_id: Identifiant de l'artiste
+        difficulty: Niveau de difficulte (1-5)
 
     Choisit aleatoirement entre: mot suivant, precedent, ou manquant.
     """
-    puzzle = _generate_word_puzzle(min_visible_words=min_visible_words, artist_id=artist_id)
+    puzzle = _generate_word_puzzle(min_visible_words=min_visible_words, artist_id=artist_id, difficulty=difficulty)
     if not puzzle:
         return None
 
@@ -298,6 +302,7 @@ def start_word_guessing_game(min_visible_words: int = 5, artist_id: str = "jacqu
         answer=answer,
         phrase=phrase,
         artist_id=artist_id,
+        difficulty=difficulty,
         word_type=word_type,
         total_rounds=5,
         current_round=1,
@@ -308,18 +313,19 @@ def start_word_guessing_game(min_visible_words: int = 5, artist_id: str = "jacqu
     return session
 
 
-def start_song_name_game(artist_id: str = "jacques-brel") -> Optional[GameSession]:
+def start_song_name_game(artist_id: str = "jacques-brel", difficulty: int = 5) -> Optional[GameSession]:
     """
     Demarre une partie de devinette du nom de chanson.
 
     Args:
         artist_id: Identifiant de l'artiste
+        difficulty: Niveau de difficulte (1-5)
 
     Affiche un extrait, revele plus a chaque erreur.
     """
     lyrics_service = get_lyrics_service(artist_id)
 
-    song = lyrics_service.get_random_song()
+    song = lyrics_service.get_random_song_for_difficulty(difficulty)
     if not song:
         return None
 
@@ -338,6 +344,7 @@ def start_song_name_game(artist_id: str = "jacques-brel") -> Optional[GameSessio
         answer=song.title,
         phrase=chunks[0] if chunks else "",
         artist_id=artist_id,
+        difficulty=difficulty,
         all_hints=chunks,
         hints_revealed=1,
     )
@@ -391,8 +398,8 @@ def pass_round(session_id: str) -> dict:
     if session.mode == GameMode.WORD_GUESSING and session.current_round < session.total_rounds:
         session.current_round += 1
 
-        # Genere un nouveau puzzle avec le meme min_visible_words
-        puzzle = _generate_word_puzzle(min_visible_words=session.min_visible_words, artist_id=session.artist_id)
+        # Genere un nouveau puzzle avec le meme min_visible_words et difficulty
+        puzzle = _generate_word_puzzle(min_visible_words=session.min_visible_words, artist_id=session.artist_id, difficulty=session.difficulty)
         if puzzle:
             song, phrase, answer, word_type = puzzle
             session.song = song
@@ -524,7 +531,7 @@ def get_hint_letter_count(session_id: str) -> dict:
         # Mode word guessing avec manches restantes: passer a la manche suivante
         if session.mode == GameMode.WORD_GUESSING and session.current_round < session.total_rounds:
             session.current_round += 1
-            puzzle = _generate_word_puzzle(min_visible_words=session.min_visible_words, artist_id=session.artist_id)
+            puzzle = _generate_word_puzzle(min_visible_words=session.min_visible_words, artist_id=session.artist_id, difficulty=session.difficulty)
             if puzzle:
                 song, phrase, answer, word_type = puzzle
                 session.song = song
@@ -601,7 +608,7 @@ def get_hint_song_title(session_id: str) -> dict:
         # Mode word guessing avec manches restantes: passer a la manche suivante
         if session.mode == GameMode.WORD_GUESSING and session.current_round < session.total_rounds:
             session.current_round += 1
-            puzzle = _generate_word_puzzle(min_visible_words=session.min_visible_words, artist_id=session.artist_id)
+            puzzle = _generate_word_puzzle(min_visible_words=session.min_visible_words, artist_id=session.artist_id, difficulty=session.difficulty)
             if puzzle:
                 song, phrase, answer, word_type = puzzle
                 session.song = song
@@ -680,7 +687,7 @@ def get_hint_first_letter(session_id: str) -> dict:
         # Mode word guessing avec manches restantes: passer a la manche suivante
         if session.mode == GameMode.WORD_GUESSING and session.current_round < session.total_rounds:
             session.current_round += 1
-            puzzle = _generate_word_puzzle(min_visible_words=session.min_visible_words, artist_id=session.artist_id)
+            puzzle = _generate_word_puzzle(min_visible_words=session.min_visible_words, artist_id=session.artist_id, difficulty=session.difficulty)
             if puzzle:
                 song, phrase, answer, word_type = puzzle
                 session.song = song
@@ -789,7 +796,7 @@ def make_guess(session_id: str, guess: str) -> dict:
             session.current_round += 1
 
             # Genere un nouveau puzzle avec le meme min_visible_words
-            puzzle = _generate_word_puzzle(min_visible_words=session.min_visible_words, artist_id=session.artist_id)
+            puzzle = _generate_word_puzzle(min_visible_words=session.min_visible_words, artist_id=session.artist_id, difficulty=session.difficulty)
             if puzzle:
                 song, phrase, answer, word_type = puzzle
                 session.song = song
@@ -871,7 +878,7 @@ def make_guess(session_id: str, guess: str) -> dict:
             session.current_round += 1
 
             # Genere un nouveau puzzle
-            puzzle = _generate_word_puzzle(min_visible_words=session.min_visible_words, artist_id=session.artist_id)
+            puzzle = _generate_word_puzzle(min_visible_words=session.min_visible_words, artist_id=session.artist_id, difficulty=session.difficulty)
             if puzzle:
                 song, phrase, answer, word_type = puzzle
                 session.song = song

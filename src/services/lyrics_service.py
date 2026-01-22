@@ -29,6 +29,7 @@ class Song:
     year: Optional[int]
     lyrics: list[dict]  # Liste de couplets
     full_text: str
+    popularity_rank: Optional[int] = None  # 1 = most popular
 
 
 @dataclass
@@ -75,7 +76,8 @@ class LyricsService:
                 album=song_data.get('album'),
                 year=song_data.get('year'),
                 lyrics=song_data.get('lyrics', []),
-                full_text=song_data.get('full_text', '')
+                full_text=song_data.get('full_text', ''),
+                popularity_rank=song_data.get('popularity_rank')
             )
             # Filtre les chansons sans paroles
             if song.full_text and len(song.full_text) > 50:
@@ -192,6 +194,126 @@ class LyricsService:
         if not self.data:
             return 0
         return len(self.data.songs)
+
+    def get_songs_for_difficulty(self, difficulty: int) -> list[Song]:
+        """
+        Retourne les chansons disponibles pour un niveau de difficulte.
+
+        Difficulty levels:
+            1 (Facile): Top 5 most popular songs
+            2 (Normal): Top 10
+            3 (Difficile): Top 20
+            4 (Expert): Top 30
+            5 (Maitre): All songs
+
+        Args:
+            difficulty: Niveau de difficulte (1-5)
+
+        Returns:
+            Liste des chansons filtrees par popularite
+        """
+        if not self.data or not self.data.songs:
+            return []
+
+        # Map difficulty to max rank
+        max_rank_by_difficulty = {
+            1: 5,    # Facile: Top 5
+            2: 10,   # Normal: Top 10
+            3: 20,   # Difficile: Top 20
+            4: 30,   # Expert: Top 30
+            5: 9999, # Maitre: All songs
+        }
+
+        max_rank = max_rank_by_difficulty.get(difficulty, 9999)
+
+        # Filter songs by popularity rank
+        filtered = [
+            song for song in self.data.songs
+            if song.popularity_rank is not None and song.popularity_rank <= max_rank
+        ]
+
+        # If no songs have popularity_rank or not enough, fall back to all songs
+        if not filtered:
+            return self.data.songs
+
+        return filtered
+
+    def get_random_song_for_difficulty(self, difficulty: int) -> Optional[Song]:
+        """
+        Retourne une chanson aleatoire pour un niveau de difficulte.
+
+        Args:
+            difficulty: Niveau de difficulte (1-5)
+
+        Returns:
+            Une chanson aleatoire parmi celles du niveau ou None
+        """
+        songs = self.get_songs_for_difficulty(difficulty)
+        if not songs:
+            return None
+        return random.choice(songs)
+
+    def get_random_phrase_for_difficulty(
+        self,
+        difficulty: int,
+        min_words: int = 5,
+        max_words: int = 12
+    ) -> Optional[tuple[Song, str, list[str]]]:
+        """
+        Retourne une phrase aleatoire d'une chanson du niveau de difficulte.
+
+        Args:
+            difficulty: Niveau de difficulte (1-5)
+            min_words: Nombre minimum de mots
+            max_words: Nombre maximum de mots
+
+        Returns:
+            Tuple (chanson, texte_complet_phrase, liste_mots) ou None
+        """
+        songs = self.get_songs_for_difficulty(difficulty)
+        if not songs:
+            return None
+
+        song = random.choice(songs)
+
+        # Split into lines and filter empty ones
+        lines = [line.strip() for line in song.full_text.split('\n') if line.strip()]
+        if not lines:
+            return None
+
+        # Convert lines to word lists
+        line_words = [extract_words(line) for line in lines]
+        line_words = [words for words in line_words if words]
+
+        if not line_words:
+            return None
+
+        # Try to find a valid phrase (multiple attempts)
+        for _ in range(20):
+            start_line = random.randint(0, len(line_words) - 1)
+            phrase_words = []
+            end_line = start_line
+
+            while end_line < len(line_words) and len(phrase_words) < max_words:
+                phrase_words.extend(line_words[end_line])
+                end_line += 1
+                if len(phrase_words) >= min_words:
+                    break
+
+            if len(phrase_words) >= min_words:
+                if len(phrase_words) > max_words:
+                    phrase_words = []
+                    for i in range(start_line, end_line):
+                        if len(phrase_words) + len(line_words[i]) <= max_words:
+                            phrase_words.extend(line_words[i])
+                        else:
+                            break
+
+                if len(phrase_words) >= min_words:
+                    phrase_text = ' '.join(phrase_words)
+                    return song, phrase_text, phrase_words
+
+        return None
 
 
 def get_available_artists() -> list[Artist]:

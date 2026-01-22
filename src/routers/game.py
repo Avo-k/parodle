@@ -62,14 +62,19 @@ async def start_game(request: StartGameRequest) -> StartGameResponse:
     - **mode**: "word_guessing" ou "song_name"
     - **artist_id**: Identifiant de l'artiste (par defaut "jacques-brel")
     - **min_visible_words**: Nombre minimum de mots visibles (par defaut 5)
+    - **difficulty**: Niveau de difficulte 1-5 (par defaut 5)
     """
     if request.mode == GameMode.WORD_GUESSING:
         session = start_word_guessing_game(
             min_visible_words=request.min_visible_words,
-            artist_id=request.artist_id
+            artist_id=request.artist_id,
+            difficulty=request.difficulty
         )
     else:
-        session = start_song_name_game(artist_id=request.artist_id)
+        session = start_song_name_game(
+            artist_id=request.artist_id,
+            difficulty=request.difficulty
+        )
 
     if not session:
         raise HTTPException(
@@ -85,6 +90,7 @@ async def start_game(request: StartGameRequest) -> StartGameResponse:
         max_guesses=5,
         current_round=session.current_round,
         total_rounds=session.total_rounds,
+        difficulty=session.difficulty,
     )
 
 

@@ -2,7 +2,7 @@
 Schemas Pydantic pour l'API de jeu.
 """
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 from typing import Optional, List
 from enum import Enum
 
@@ -37,6 +37,7 @@ class StartGameRequest(BaseModel):
     mode: GameMode
     artist_id: str = "jacques-brel"  # Identifiant de l'artiste
     min_visible_words: int = 5  # Nombre minimum de mots visibles (sans compter ___)
+    difficulty: int = Field(default=5, ge=1, le=5)  # Niveau de difficulte (1-5)
 
 
 class StartGameResponse(BaseModel):
@@ -48,6 +49,7 @@ class StartGameResponse(BaseModel):
     max_guesses: int = 5
     current_round: int = 1
     total_rounds: int = 1
+    difficulty: int = 5  # Niveau de difficulte (1-5)
 
 
 class GuessRequest(BaseModel):
