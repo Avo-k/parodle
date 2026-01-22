@@ -5,11 +5,36 @@ Charge et fournit acces aux paroles depuis le fichier JSON.
 
 import json
 import random
+import re
 from pathlib import Path
 from typing import Optional
 from dataclasses import dataclass
 
 from src.utils.text_processing import extract_words
+
+
+def _is_featuring_song(song_data: dict) -> bool:
+    """
+    Detecte si une chanson est un featuring/collaboration.
+
+    Patterns detectes:
+    - [Artist1 & Artist2] dans les paroles
+    - "feat" ou "ft." dans le titre
+    """
+    title = song_data.get('title', '').lower()
+    full_text = song_data.get('full_text', '')
+
+    # Check title for featuring indicators
+    if 'feat' in title or 'ft.' in title or ' & ' in title:
+        return True
+
+    # Check lyrics for collaboration markers like [Artist1 & Artist2]
+    # This pattern matches [Name & Name] or [Name1, Name2 & Name3]
+    collab_pattern = r'\[[^\]]*\s+&\s+[^\]]*\]'
+    if re.search(collab_pattern, full_text):
+        return True
+
+    return False
 
 
 @dataclass
@@ -69,7 +94,13 @@ class LyricsService:
             raw_data = json.load(f)
 
         songs = []
+        skipped_featuring = []
         for song_data in raw_data.get('songs', []):
+            # Filtre les featurings/collaborations
+            if _is_featuring_song(song_data):
+                skipped_featuring.append(song_data.get('title', 'Unknown'))
+                continue
+
             song = Song(
                 id=song_data['id'],
                 title=song_data['title'],
@@ -82,6 +113,15 @@ class LyricsService:
             # Filtre les chansons sans paroles
             if song.full_text and len(song.full_text) > 50:
                 songs.append(song)
+
+        if skipped_featuring:
+            print(f"  Exclu {len(skipped_featuring)} featuring(s): {', '.join(skipped_featuring[:3])}{'...' if len(skipped_featuring) > 3 else ''}")
+
+        # Re-rank songs to fill gaps left by excluded featurings
+        songs_with_rank = [s for s in songs if s.popularity_rank is not None]
+        songs_with_rank.sort(key=lambda s: s.popularity_rank)
+        for new_rank, song in enumerate(songs_with_rank, start=1):
+            song.popularity_rank = new_rank
 
         self.data = LyricsData(
             songs=songs,
